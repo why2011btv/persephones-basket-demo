@@ -96,7 +96,7 @@
   const preview = document.getElementById('preview');
   const fileInput = document.getElementById('fileInput');
   const predLabel = document.getElementById('predLabel');
-  const predProb  = document.getElementById('predProb');
+  const predProb = document.getElementById('predProb');
   const metricsDiv = document.getElementById('metrics');
 
   async function dataURLFromUrl(url){
@@ -106,12 +106,10 @@
       const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob);
     })
   }
-
-  // 修改后的 useSample 函数，调用假的预测结果
+  
   async function useSample(url){
     const dataUrl = await dataURLFromUrl(url);
     preview.src = dataUrl;
-    // 模拟 predictFile 调用
     displayResult(PRESET_RESULTS);
   }
 
@@ -121,13 +119,11 @@
     const reader = new FileReader();
     reader.onload = ()=> preview.src = reader.result;
     reader.readAsDataURL(file);
-    // 模拟 predictFile 调用
     displayResult(PRESET_RESULTS);
   });
 
-  // 新增的函数，用于显示预设结果
   function displayResult(results){
-    const best = results[0]; // 假设第一个是最佳结果
+    const best = results[0]; 
     predLabel.textContent = `Prediction: ${best.label}`;
     predProb.textContent = `Confidence: ${(best.prob*100).toFixed(2)}%`;
 
@@ -144,32 +140,6 @@
     });
     pulsePath(best.index, CLASS_COUNT);
   }
-
-  // **以下为原始代码，未做修改，但已注释掉与后端交互的 predictFile 函数**
-  // async function predictFile(file){
-  //   const fd = new FormData();
-  //   fd.append('image', file);
-  //   const res = await fetch(`${BASE}/predict`, {method:'POST', body: fd});
-  //   const js = await res.json();
-  //   if(js.error){ alert(js.error); return; }
-  //   const best = js.best;
-  //   predLabel.textContent = `Prediction: ${best.label}`;
-  //   predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
-
-  //   metricsDiv.innerHTML = '';
-  //   js.top.forEach(item=>{
-  //     const row = document.createElement('div');
-  //     row.className='metric';
-  //     row.innerHTML = `
-  //       <div>${item.label}</div>
-  //       <div class="bar"><span style="width:${(item.prob*100).toFixed(2)}%"></span></div>
-  //       <div style="margin-left:8px">${(item.prob*100).toFixed(1)}%</div>
-  //     `;
-  //     metricsDiv.appendChild(row);
-  //   });
-
-  //   pulsePath(js.best.index, js.all_len);
-  // }
 
   const canvas = document.getElementById('nn');
   const ctx = canvas.getContext('2d');
