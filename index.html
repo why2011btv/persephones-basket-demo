@@ -45,16 +45,13 @@
   <div class="left card">
     <h2 class="title">Sample Images</h2>
     <div class="samples">
-      {% if sample_files and sample_files|length %}
-        {% for s in sample_files %}
-          <div class="sample" onclick="useSample('{{ url_for('static', filename='samples/' + s) }}')">
-            <img src="{{ url_for('static', filename='samples/' + s) }}" alt="sample">
-          </div>
-        {% endfor %}
-      {% else %}
-        <div class="sub">Put a few images under <code>static/samples/</code>.</div>
-      {% endif %}
-    </div>
+            <div class="sample" onclick="useSample('static/samples/sample1.jpg')">
+        <img src="static/samples/sample1.jpg" alt="sample">
+      </div>
+      <div class="sample" onclick="useSample('static/samples/sample2.jpg')">
+        <img src="static/samples/sample2.jpg" alt="sample">
+      </div>
+    </div>
     <div class="upload">
       <div style="margin-bottom:8px">Or upload your own image</div>
       <label class="btn">
@@ -63,8 +60,8 @@
       </label>
     </div>
     <div style="margin-top:12px">
-      <span class="pill">{{ class_names|length }} classes</span>
-    </div>
+            <span class="pill">5 classes</span>
+    </div>
   </div>
 
   <!-- MIDDLE -->
