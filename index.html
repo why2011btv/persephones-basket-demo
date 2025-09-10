@@ -137,6 +137,70 @@
 
     pulsePath(bestIdx, CLASS_NAMES.length);
   }
+
+  const canvas = document.getElementById('nn');
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+  window.addEventListener('resize', resize, {passive:true}); resize();
+
+  const LAYERS = [16, 24, 16, CLASS_NAMES.length];
+  const nodes = [];
+  function build(){
+    nodes.length = 0;
+    const w = canvas.width, h = canvas.height;
+    LAYERS.forEach((cnt, li)=>{
+      for(let i=0;i<cnt;i++){
+        const x = (li+1) / (LAYERS.length+1) * w;
+        const y = (i+1) / (cnt+1) * h;
+        nodes.push({x,y,layer:li,active:0});
+      }
+    });
+  }
+  function draw(){
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    for(const a of nodes){
+      for(const b of nodes){
+        if(b.layer === a.layer+1){
+          const alpha = 0.08 + 0.25*Math.max(a.active,b.active);
+          ctx.strokeStyle = `rgba(110,231,255,${alpha})`;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const n of nodes){
+      const r = 4 + 4*n.active;
+      const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2.2);
+      grad.addColorStop(0, `rgba(167,139,250,${0.6*n.active})`);
+      grad.addColorStop(1, `rgba(55,65,81,0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,Math.PI*2); ctx.fill();
+
+      ctx.fillStyle = n.active>0.1 ? '#6ee7ff' : '#9aa7c2';
+      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
+      n.active *= 0.92;
+    }
+    requestAnimationFrame(draw);
+  }
+  build(); draw();
+
+  function pulsePath(outIndex, outCount){
+    const lastLayerIdx = LAYERS.length-1;
+    let kth = 0, target = null;
+    for(const n of nodes){
+      if(n.layer===lastLayerIdx){
+        if(kth===outIndex){ target=n; break; }
+        kth++;
+      }
+    }
+    if(!target) return;
+    for(let L=lastLayerIdx; L>=0; L--){
+      const layerNodes = nodes.filter(n=>n.layer===L);
+      const sorted = [...layerNodes].sort((a,b)=> Math.abs(a.y-target.y) - Math.abs(b.y-target.y));
+      sorted.slice(0, Math.max(4, Math.floor(layerNodes.length*0.3))).forEach(n=> n.active = Math.min(1, n.active+0.9));
+    }
+  }
 </script>
 </body>
 </html>
