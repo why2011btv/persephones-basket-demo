@@ -16,7 +16,7 @@
   .card{background:var(--panel);border:1px solid #1f2a44;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
   .left,.middle,.right{padding:16px}
   .title{font-size:18px;font-weight:700;letter-spacing:.2px;margin:0 0 10px 0}
-  .samples{display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:10px;max-height:calc(100vh - 220px);overflow:auto;padding-right:6px}
+  .samples{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 220px);overflow:auto;padding-right:6px}
   .sample{cursor:pointer;border-radius:12px;border:1px solid #1e2744;overflow:hidden;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#0a0f1b;}
   .sample img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
   .sample:hover img{transform:scale(1.03)}
@@ -46,19 +46,19 @@
     <h2 class="title">Sample Images</h2>
     <div class="samples">
       <div class="sample" onclick="useSample('static/samples/potato_early_blight.JPG')">
-        <img src="static/samples/potato_early_blight.JPG" alt="sample">
+<img src="static/samples/potato_early_blight.JPG" alt="sample">
       </div>
       <div class="sample" onclick="useSample('static/samples/potato_late_blight.JPG')">
-        <img src="static/samples/potato_late_blight.JPG" alt="sample">
+<img src="static/samples/potato_late_blight.JPG" alt="sample">
       </div>
       <div class="sample" onclick="useSample('static/samples/tomato_bacterial_spot.JPG')">
-        <img src="static/samples/tomato_bacterial_spot.JPG" alt="sample">
+<img src="static/samples/tomato_bacterial_spot.JPG" alt="sample">
       </div>
       <div class="sample" onclick="useSample('static/samples/tomato_mosaic_virus.JPG')">
-        <img src="static/samples/tomato_mosaic_virus.JPG" alt="sample">
+<img src="static/samples/tomato_mosaic_virus.JPG" alt="sample">
       </div>
       <div class="sample" onclick="useSample('static/samples/pepper_bacterial_spot.JPG')">
-        <img src="static/samples/pepper_bacterial_spot.JPG" alt="sample">
+<img src="static/samples/pepper_bacterial_spot.JPG" alt="sample">
       </div>
     </div>
     <div class="upload">
