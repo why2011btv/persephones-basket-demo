@@ -3,212 +3,237 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Plant Disease Demo — best_model_original.keras</title>
+<title>Plant Disease Demo — Static Version</title>
 <style>
-  :root{
-    --bg:#0b0f1a; --panel:#121829; --accent:#6ee7ff; --accent2:#a78bfa;
-    --text:#e6edf7; --muted:#95a0b3; --good:#22c55e;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#0b0f1a 0%, #0e1422 100%);
-       color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;}
-  .wrap{display:grid;grid-template-columns:280px 1fr 360px;gap:16px;padding:16px;min-height:100vh;}
-  .card{background:var(--panel);border:1px solid #1f2a44;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
-  .left,.middle,.right{padding:16px}
-  .title{font-size:18px;font-weight:700;letter-spacing:.2px;margin:0 0 10px 0}
-  .samples{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 220px);overflow:auto;padding-right:6px}
-  .sample{cursor:pointer;border-radius:12px;border:1px solid #1e2744;overflow:hidden;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#0a0f1b;}
-  .sample img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
-  .sample:hover img{transform:scale(1.03)}
-  .upload{margin-top:12px;padding:12px;border:1px dashed #31406b;border-radius:12px;text-align:center;color:var(--muted)}
-  .upload input{display:none}
-  .btn{cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));
-       color:#031222;font-weight:700;padding:10px 14px;border:none;border-radius:10px;}
-  .btn:active{transform:translateY(1px)}
-  .preview{display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start;}
-  .imgbox{border-radius:16px;overflow:hidden;border:1px solid #223056;background:#0a0f1b;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
-  .imgbox img{max-width:100%;max-height:100%;display:block}
-  .metrics{padding:8px 0}
-  .metric{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #233156}
-  .bar{height:8px;background:#13203c;border-radius:999px;overflow:hidden;flex:1;margin-left:10px}
-  .bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
-  .pred{font-size:22px;font-weight:800}
-  .sub{color:var(--muted);font-size:12px}
-  .footer{margin-top:12px;color:var(--muted);font-size:12px}
-  canvas{width:100%;height:calc(100vh - 48px);display:block;border-radius:16px}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(110,231,255,.1);color:var(--accent)}
+  :root{
+    --bg:#0b0f1a; --panel:#121829; --accent:#6ee7ff; --accent2:#a78bfa;
+    --text:#e6edf7; --muted:#95a0b3; --good:#22c55e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f1a 0%, #0e1422 100%);
+       color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;}
+  .wrap{display:grid;grid-template-columns:280px 1fr 360px;gap:16px;padding:16px;min-height:100vh;}
+  .card{background:var(--panel);border:1px solid #1f2a44;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+  .left,.middle,.right{padding:16px}
+  .title{font-size:18px;font-weight:700;letter-spacing:.2px;margin:0 0 10px 0}
+  .samples{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 220px);overflow:auto;padding-right:6px}
+  .sample{cursor:pointer;border-radius:12px;border:1px solid #1e2744;overflow:hidden;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#0a0f1b;}
+  .sample img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
+  .sample:hover img{transform:scale(1.03)}
+  .upload{margin-top:12px;padding:12px;border:1px dashed #31406b;border-radius:12px;text-align:center;color:var(--muted)}
+  .upload input{display:none}
+  .btn{cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+       color:#031222;font-weight:700;padding:10px 14px;border:none;border-radius:10px;}
+  .btn:active{transform:translateY(1px)}
+  .preview{display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start;}
+  .imgbox{border-radius:16px;overflow:hidden;border:1px solid #223056;background:#0a0f1b;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+  .imgbox img{max-width:100%;max-height:100%;display:block}
+  .metrics{padding:8px 0}
+  .metric{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #233156}
+  .bar{height:8px;background:#13203c;border-radius:999px;overflow:hidden;flex:1;margin-left:10px}
+  .bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .pred{font-size:22px;font-weight:800}
+  .sub{color:var(--muted);font-size:12px}
+  .footer{margin-top:12px;color:var(--muted);font-size:12px}
+  canvas{width:100%;height:calc(100vh - 48px);display:block;border-radius:16px}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(110,231,255,.1);color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <!-- LEFT -->
-  <div class="left card">
-    <h2 class="title">Sample Images</h2>
-    <div class="samples">
-      {% if sample_files and sample_files|length %}
-        {% for s in sample_files %}
-          <div class="sample" onclick="useSample('{{ url_for('static', filename='samples/' + s) }}')">
-            <img src="{{ url_for('static', filename='samples/' + s) }}" alt="sample">
-          </div>
-        {% endfor %}
-      {% else %}
-        <div class="sub">Put a few images under <code>static/samples/</code>.</div>
-      {% endif %}
-    </div>
-    <div class="upload">
-      <div style="margin-bottom:8px">Or upload your own image</div>
-      <label class="btn">
-        <input type="file" id="fileInput" accept="image/*" />
-        Choose File
-      </label>
-    </div>
-    <div style="margin-top:12px">
-      <span class="pill">{{ class_names|length }} classes</span>
-    </div>
-  </div>
+    <div class="left card">
+    <h2 class="title">Sample Images</h2>
+    <div class="samples">
+            <div class="sample" onclick="useSample('static/samples/sample1.jpg')">
+        <img src="static/samples/sample1.jpg" alt="sample">
+      </div>
+      <div class="sample" onclick="useSample('static/samples/sample2.jpg')">
+        <img src="static/samples/sample2.jpg" alt="sample">
+      </div>
+    </div>
+    <div class="upload">
+      <div style="margin-bottom:8px">Or upload your own image</div>
+      <label class="btn">
+        <input type="file" id="fileInput" accept="image/*" />
+        Choose File
+      </label>
+    </div>
+    <div style="margin-top:12px">
+            <span class="pill">5 classes</span>
+    </div>
+  </div>
 
-  <!-- MIDDLE -->
-  <div class="middle card">
-    <h2 class="title">Prediction</h2>
-    <div class="preview">
-      <div class="imgbox"><img id="preview" src="" alt="preview"></div>
-      <div>
-        <div class="pred" id="predLabel">—</div>
-        <div class="sub" id="predProb">—</div>
-        <div class="metrics" id="metrics"></div>
-        <div class="footer">Tip: click a sample (left) or upload; the visualization (right) will animate to the predicted class.</div>
-      </div>
-    </div>
-  </div>
+    <div class="middle card">
+    <h2 class="title">Prediction</h2>
+    <div class="preview">
+      <div class="imgbox"><img id="preview" src="" alt="preview"></div>
+      <div>
+        <div class="pred" id="predLabel">—</div>
+        <div class="sub" id="predProb">—</div>
+        <div class="metrics" id="metrics"></div>
+        <div class="footer">Tip: click a sample (left) or upload; the visualization (right) will animate to the predicted class.</div>
+      </div>
+    </div>
+  </div>
 
-  <!-- RIGHT -->
-  <div class="right card">
-    <h2 class="title">Neural Network Visualization</h2>
-    <canvas id="nn"></canvas>
-  </div>
+    <div class="right card">
+    <h2 class="title">Neural Network Visualization</h2>
+    <canvas id="nn"></canvas>
+  </div>
 </div>
 
 <script>
-  const BASE = "{{ request.script_root or '' }}";
-  const CLASS_COUNT = {{ class_names|length }};
+  const CLASS_COUNT = 5; // 假设有5个类别
+  const CLASS_NAMES = ['Healthy', 'Bacterial Spot', 'Early Blight', 'Late Blight', 'Leaf Mold'];
+  const PRESET_RESULTS = [
+    { label: 'Healthy', prob: 0.95, index: 0 },
+    { label: 'Bacterial Spot', prob: 0.02, index: 1 },
+    { label: 'Early Blight', prob: 0.01, index: 2 },
+    { label: 'Late Blight', prob: 0.01, index: 3 },
+    { label: 'Leaf Mold', prob: 0.01, index: 4 }
+  ];
 
-  const preview = document.getElementById('preview');
-  const fileInput = document.getElementById('fileInput');
-  const predLabel = document.getElementById('predLabel');
-  const predProb  = document.getElementById('predProb');
-  const metricsDiv = document.getElementById('metrics');
+  const preview = document.getElementById('preview');
+  const fileInput = document.getElementById('fileInput');
+  const predLabel = document.getElementById('predLabel');
+  const predProb  = document.getElementById('predProb');
+  const metricsDiv = document.getElementById('metrics');
 
-  async function dataURLFromUrl(url){
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await new Promise(r=>{
-      const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob);
-    })
-  }
-  async function useSample(url){
-    const dataUrl = await dataURLFromUrl(url);
-    preview.src = dataUrl;
-    const blob = await (await fetch(url)).blob();
-    const file = new File([blob], "sample.png", {type: blob.type});
-    await predictFile(file);
-  }
-  fileInput.addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=> preview.src = reader.result;
-    reader.readAsDataURL(file);
-    await predictFile(file);
-  });
+  async function dataURLFromUrl(url){
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise(r=>{
+      const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob);
+    })
+  }
 
-  async function predictFile(file){
-    const fd = new FormData();
-    fd.append('image', file);
-    const res = await fetch(`${BASE}/predict`, {method:'POST', body: fd});
-    const js = await res.json();
-    if(js.error){ alert(js.error); return; }
-    const best = js.best;
-    predLabel.textContent = `Prediction: ${best.label}`;
-    predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
+  // 修改后的 useSample 函数，调用假的预测结果
+  async function useSample(url){
+    const dataUrl = await dataURLFromUrl(url);
+    preview.src = dataUrl;
+    // 模拟 predictFile 调用
+    displayResult(PRESET_RESULTS);
+  }
 
-    metricsDiv.innerHTML = '';
-    js.top.forEach(item=>{
-      const row = document.createElement('div');
-      row.className='metric';
-      row.innerHTML = `
-        <div>${item.label}</div>
-        <div class="bar"><span style="width:${(item.prob*100).toFixed(2)}%"></span></div>
-        <div style="margin-left:8px">${(item.prob*100).toFixed(1)}%</div>
-      `;
-      metricsDiv.appendChild(row);
-    });
+  fileInput.addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=> preview.src = reader.result;
+    reader.readAsDataURL(file);
+    // 模拟 predictFile 调用
+    displayResult(PRESET_RESULTS);
+  });
 
-    pulsePath(js.best.index, js.all_len);
-  }
+  // 新增的函数，用于显示预设结果
+  function displayResult(results){
+    const best = results[0]; // 假设第一个是最佳结果
+    predLabel.textContent = `Prediction: ${best.label}`;
+    predProb.textContent = `Confidence: ${(best.prob*100).toFixed(2)}%`;
 
-  const canvas = document.getElementById('nn');
-  const ctx = canvas.getContext('2d');
-  function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
-  window.addEventListener('resize', resize, {passive:true}); resize();
+    metricsDiv.innerHTML = '';
+    results.forEach(item=>{
+      const row = document.createElement('div');
+      row.className='metric';
+      row.innerHTML = `
+        <div>${item.label}</div>
+        <div class="bar"><span style="width:${(item.prob*100).toFixed(2)}%"></span></div>
+        <div style="margin-left:8px">${(item.prob*100).toFixed(1)}%</div>
+      `;
+      metricsDiv.appendChild(row);
+    });
+    pulsePath(best.index, CLASS_COUNT);
+  }
 
-  const LAYERS = [16, 24, 16, CLASS_COUNT];
-  const nodes = [];
-  function build(){
-    nodes.length = 0;
-    const w = canvas.width, h = canvas.height;
-    LAYERS.forEach((cnt, li)=>{
-      for(let i=0;i<cnt;i++){
-        const x = (li+1) / (LAYERS.length+1) * w;
-        const y = (i+1) / (cnt+1) * h;
-        nodes.push({x,y,layer:li,active:0});
-      }
-    });
-  }
-  function draw(){
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0,0,w,h);
+  // **以下为原始代码，未做修改，但已注释掉与后端交互的 predictFile 函数**
+  // async function predictFile(file){
+  //   const fd = new FormData();
+  //   fd.append('image', file);
+  //   const res = await fetch(`${BASE}/predict`, {method:'POST', body: fd});
+  //   const js = await res.json();
+  //   if(js.error){ alert(js.error); return; }
+  //   const best = js.best;
+  //   predLabel.textContent = `Prediction: ${best.label}`;
+  //   predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
 
-    for(const a of nodes){
-      for(const b of nodes){
-        if(b.layer === a.layer+1){
-          const alpha = 0.08 + 0.25*Math.max(a.active,b.active);
-          ctx.strokeStyle = `rgba(110,231,255,${alpha})`;
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        }
-      }
-    }
-    for(const n of nodes){
-      const r = 4 + 4*n.active;
-      const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2.2);
-      grad.addColorStop(0, `rgba(167,139,250,${0.6*n.active})`);
-      grad.addColorStop(1, `rgba(55,65,81,0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,Math.PI*2); ctx.fill();
+  //   metricsDiv.innerHTML = '';
+  //   js.top.forEach(item=>{
+  //     const row = document.createElement('div');
+  //     row.className='metric';
+  //     row.innerHTML = `
+  //       <div>${item.label}</div>
+  //       <div class="bar"><span style="width:${(item.prob*100).toFixed(2)}%"></span></div>
+  //       <div style="margin-left:8px">${(item.prob*100).toFixed(1)}%</div>
+  //     `;
+  //     metricsDiv.appendChild(row);
+  //   });
 
-      ctx.fillStyle = n.active>0.1 ? '#6ee7ff' : '#9aa7c2';
-      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
-      n.active *= 0.92;
-    }
-    requestAnimationFrame(draw);
-  }
-  build(); draw();
+  //   pulsePath(js.best.index, js.all_len);
+  // }
 
-  function pulsePath(outIndex, outCount){
-    const lastLayerIdx = LAYERS.length-1;
-    let kth = 0, target = null;
-    for(const n of nodes){
-      if(n.layer===lastLayerIdx){
-        if(kth===outIndex){ target=n; break; }
-        kth++;
-      }
-    }
-    if(!target) return;
-    for(let L=lastLayerIdx; L>=0; L--){
-      const layerNodes = nodes.filter(n=>n.layer===L);
-      const sorted = [...layerNodes].sort((a,b)=> Math.abs(a.y-target.y) - Math.abs(b.y-target.y));
-      sorted.slice(0, Math.max(4, Math.floor(layerNodes.length*0.3))).forEach(n=> n.active = Math.min(1, n.active+0.9));
-    }
-  }
+  const canvas = document.getElementById('nn');
+  const ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+  window.addEventListener('resize', resize, {passive:true}); resize();
+
+  const LAYERS = [16, 24, 16, CLASS_COUNT];
+  const nodes = [];
+  function build(){
+    nodes.length = 0;
+    const w = canvas.width, h = canvas.height;
+    LAYERS.forEach((cnt, li)=>{
+      for(let i=0;i<cnt;i++){
+        const x = (li+1) / (LAYERS.length+1) * w;
+        const y = (i+1) / (cnt+1) * h;
+        nodes.push({x,y,layer:li,active:0});
+      }
+    });
+  }
+  function draw(){
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    for(const a of nodes){
+      for(const b of nodes){
+        if(b.layer === a.layer+1){
+          const alpha = 0.08 + 0.25*Math.max(a.active,b.active);
+          ctx.strokeStyle = `rgba(110,231,255,${alpha})`;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const n of nodes){
+      const r = 4 + 4*n.active;
+      const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2.2);
+      grad.addColorStop(0, `rgba(167,139,250,${0.6*n.active})`);
+      grad.addColorStop(1, `rgba(55,65,81,0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,Math.PI*2); ctx.fill();
+
+      ctx.fillStyle = n.active>0.1 ? '#6ee7ff' : '#9aa7c2';
+      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
+      n.active *= 0.92;
+    }
+    requestAnimationFrame(draw);
+  }
+  build(); draw();
+
+  function pulsePath(outIndex, outCount){
+    const lastLayerIdx = LAYERS.length-1;
+    let kth = 0, target = null;
+    for(const n of nodes){
+      if(n.layer===lastLayerIdx){
+        if(kth===outIndex){ target=n; break; }
+        kth++;
+      }
+    }
+    if(!target) return;
+    for(let L=lastLayerIdx; L>=0; L--){
+      const layerNodes = nodes.filter(n=>n.layer===L);
+      const sorted = [...layerNodes].sort((a,b)=> Math.abs(a.y-target.y) - Math.abs(b.y-target.y));
+      sorted.slice(0, Math.max(4, Math.floor(layerNodes.length*0.3))).forEach(n=> n.active = Math.min(1, n.active+0.9));
+    }
+  }
 </script>
 </body>
 </html>
