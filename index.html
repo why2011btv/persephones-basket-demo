@@ -101,39 +101,106 @@
   const predProb  = document.getElementById('predProb');
   const metricsDiv = document.getElementById('metrics');
 
-  // 模拟类别（你可以改成真实类别名）
-  const CLASS_NAMES = ["Potato Early Blight", "Potato Late Blight", "Tomato Bacterial Spot", "Tomato Mosaic Virus", "Bell Pepper Bacterial Spot"];
+  // 类别名
+  const CLASS_NAMES = [
+    "Potato Early Blight",
+    "Potato Late Blight",
+    "Tomato Bacterial Spot",
+    "Tomato Mosaic Virus",
+    "Bell Pepper Bacterial Spot"
+  ];
 
-  async function useSample(url){
-    preview.src = url;
-    // 模拟预测
-    fakePredict();
+  // 每个 sample 对应的正确标签
+  const SAMPLE_LABELS = {
+    "static/samples/potato_early_blight.JPG": "Potato Early Blight",
+    "static/samples/potato_late_blight.JPG": "Potato Late Blight",
+    "static/samples/tomato_bacterial_spot.JPG": "Tomato Bacterial Spot",
+    "static/samples/tomato_mosaic_virus.JPG": "Tomato Mosaic Virus",
+    "static/samples/pepper_bacterial_spot.JPG": "Bell Pepper Bacterial Spot",
+  };
+
+  // 哈希函数：字符串 -> 稳定整数
+  function hashString(str){
+    let h = 0;
+    for(let i=0;i<str.length;i++){
+      h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    }
+    return h;
   }
 
+  // 基于种子生成固定随机数
+  function seededRandom(seed, min=0, max=1){
+    const x = Math.sin(seed) * 10000;
+    return min + (x - Math.floor(x)) * (max-min);
+  }
+
+  // 为 sample 生成固定分布
+  function makeSeededDistribution(url, correctLabel){
+    const seed = hashString(url);
+    const correctProb = seededRandom(seed, 0.7, 0.8); // 正确类在 70-80%
+    const remaining = 1 - correctProb;
+
+    let probs = CLASS_NAMES.map(c => 0);
+    probs[CLASS_NAMES.indexOf(correctLabel)] = correctProb;
+
+    const others = CLASS_NAMES.filter(c => c !== correctLabel);
+    // 给其他类一点小扰动
+    let otherProbs = others.map((c,i)=> seededRandom(seed+i+1, 0.01, 0.1));
+    let sumOthers = otherProbs.reduce((a,b)=>a+b,0);
+    otherProbs = otherProbs.map(v => v/sumOthers * remaining);
+
+    others.forEach((c,i)=>{
+      probs[CLASS_NAMES.indexOf(c)] = otherProbs[i];
+    });
+
+    return probs;
+  }
+
+  // 缓存 sample 分布
+  const SAMPLE_DISTS = {};
+  Object.entries(SAMPLE_LABELS).forEach(([url,label])=>{
+    SAMPLE_DISTS[url] = makeSeededDistribution(url,label);
+  });
+
+  // 点击 sample
+  async function useSample(url){
+    preview.src = url;
+    if(SAMPLE_DISTS[url]){
+      fakePredict(SAMPLE_DISTS[url]);
+    } else {
+      fakePredict();
+    }
+  }
+
+  // 上传文件 → 随机预测
   fileInput.addEventListener('change', async (e)=>{
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
     reader.onload = ()=> preview.src = reader.result;
     reader.readAsDataURL(file);
-    // 模拟预测
     fakePredict();
   });
 
   // 假预测函数
-  function fakePredict(){
-    const probs = CLASS_NAMES.map(()=> Math.random());
-    const sum = probs.reduce((a,b)=>a+b,0);
-    const norm = probs.map(p=>p/sum);
+  function fakePredict(forcedProbs){
+    let probs;
+    if(forcedProbs){
+      probs = forcedProbs;
+    } else {
+      probs = CLASS_NAMES.map(()=> Math.random());
+      const sum = probs.reduce((a,b)=>a+b,0);
+      probs = probs.map(p=>p/sum);
+    }
 
-    const bestIdx = norm.indexOf(Math.max(...norm));
-    const best = {label: CLASS_NAMES[bestIdx], prob: norm[bestIdx]};
+    const bestIdx = probs.indexOf(Math.max(...probs));
+    const best = {label: CLASS_NAMES[bestIdx], prob: probs[bestIdx]};
 
     predLabel.textContent = `Prediction: ${best.label}`;
     predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
 
     metricsDiv.innerHTML = '';
-    norm.forEach((p,i)=>{
+    probs.forEach((p,i)=>{
       const row = document.createElement('div');
       row.className='metric';
       row.innerHTML = `
@@ -147,6 +214,7 @@
     pulsePath(bestIdx, CLASS_NAMES.length);
   }
 
+  // 神经网络可视化部分
   const canvas = document.getElementById('nn');
   const ctx = canvas.getContext('2d');
   function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
@@ -211,5 +279,6 @@
     }
   }
 </script>
+
 </body>
 </html>
