@@ -45,11 +45,20 @@
   <div class="left card">
     <h2 class="title">Sample Images</h2>
     <div class="samples">
-            <div class="sample" onclick="useSample('static/samples/sample1.jpg')">
-        <img src="static/samples/sample1.jpg" alt="sample">
+      <div class="sample" onclick="useSample('static/samples/potato_early_blight.JPG')">
+        <img src="static/samples/potato_early_blight.JPG" alt="sample">
       </div>
-      <div class="sample" onclick="useSample('static/samples/sample2.jpg')">
-        <img src="static/samples/sample2.jpg" alt="sample">
+      <div class="sample" onclick="useSample('static/samples/potato_late_blight.JPG')">
+        <img src="static/samples/potato_late_blight.JPG" alt="sample">
+      </div>
+      <div class="sample" onclick="useSample('static/samples/tomato_bacterial_spot.JPG')">
+        <img src="static/samples/tomato_bacterial_spot.JPG" alt="sample">
+      </div>
+      <div class="sample" onclick="useSample('static/samples/tomato_mosaic_virus.JPG')">
+        <img src="static/samples/tomato_mosaic_virus.JPG" alt="sample">
+      </div>
+      <div class="sample" onclick="useSample('static/samples/pepper_bacterial_spot.JPG')">
+        <img src="static/samples/pepper_bacterial_spot.JPG" alt="sample">
       </div>
     </div>
     <div class="upload">
@@ -93,7 +102,7 @@
   const metricsDiv = document.getElementById('metrics');
 
   // 模拟类别（你可以改成真实类别名）
-  const CLASS_NAMES = ["Corn Blight", "Soybean Rust", "Healthy", "Leaf Spot", "Other"];
+  const CLASS_NAMES = ["Potato Early Blight", "Potato Late Blight", "Tomato Bacterial Spot", "Tomato Mosaic Virus", "Bell Pepper Bacterial Spot"];
 
   async function useSample(url){
     preview.src = url;
