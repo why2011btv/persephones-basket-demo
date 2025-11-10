@@ -194,6 +194,14 @@
 </div>
 
 <script>
+  // Detect base path for GitHub Pages
+  // For GitHub Pages: /persephones-basket-demo/ or /persephones-basket-demo/index.html
+  // For local: / or /index.html or file://
+  const pathParts = window.location.pathname.split('/').filter(p => p);
+  const isGitHubPages = pathParts.length > 0 && pathParts[0] !== 'index.html';
+  const basePath = isGitHubPages ? `/${pathParts[0]}` : '';
+  const getAssetPath = (path) => basePath ? `${basePath}/${path}` : path;
+
   const preview = document.getElementById('preview');
   const fileInput = document.getElementById('fileInput');
   const predLabel = document.getElementById('predLabel');
@@ -329,13 +337,24 @@
 
   // 点击 sample
   async function useSample(url){
-    preview.src = url;
+    const fullUrl = getAssetPath(url);
+    preview.src = fullUrl;
     if(SAMPLE_DISTS[url]){
       fakePredict(SAMPLE_DISTS[url]);
     } else {
       fakePredict();
     }
   }
+
+  // Update all sample image sources to use base path
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.sample img').forEach(img => {
+      const originalSrc = img.getAttribute('src');
+      if (originalSrc && !originalSrc.startsWith('http') && !originalSrc.startsWith('data:')) {
+        img.src = getAssetPath(originalSrc);
+      }
+    });
+  });
 
   // 上传文件 → 随机预测
   fileInput.addEventListener('change', async (e)=>{
