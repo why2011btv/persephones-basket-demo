@@ -336,8 +336,11 @@
   });
 
   // 点击 sample
+  
   async function useSample(url){
-    const fullUrl = getAssetPath(url);
+    //const fullUrl = getAssetPath(url);
+    const fullUrl = url.startsWith('http') ? url : getAssetPath(url);
+
     preview.src = fullUrl;
     if(SAMPLE_DISTS[url]){
       fakePredict(SAMPLE_DISTS[url]);
