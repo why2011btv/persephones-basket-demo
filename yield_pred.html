@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yield Prediction Demo</title>
+<style>
+  :root{
+    --bg:#0b0f1a; --panel:#121829; --accent:#6ee7ff; --accent2:#a78bfa;
+    --text:#e6edf7; --muted:#95a0b3; --good:#22c55e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#0b0f1a 0%, #0e1422 100%);
+    color:var(--text);
+    font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+  }
+  .wrap{
+    display:grid;
+    grid-template-columns:320px 1fr 360px;
+    gap:16px;
+    padding:16px;
+    min-height:100vh;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid #1f2a44;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .title{
+    font-size:18px;
+    font-weight:700;
+    margin:0 0 10px 0;
+  }
+  .section-title{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin:12px 0 4px;
+  }
+  .input-group{
+    margin-bottom:10px;
+  }
+  label{
+    display:block;
+    margin-bottom:4px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  input, select{
+    width:100%;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid #31406b;
+    background:#0a0f1b;
+    color:var(--text);
+    font-size:13px;
+  }
+  input::placeholder{
+    color:#4b5674;
+  }
+  .btn{
+    cursor:pointer;
+    margin-top:12px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#031222;
+    font-weight:700;
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+    font-size:14px;
+  }
+  .btn:active{ transform:translateY(1px); }
+
+  .pred-main{
+    font-size:24px;
+    font-weight:800;
+    margin-bottom:6px;
+  }
+  .pred-sub{
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .metric-row{
+    padding:8px 0;
+    border-bottom:1px dashed #233156;
+    font-size:13px;
+  }
+  .metric-row span.key{
+    color:var(--muted);
+  }
+  .metric-row span.val{
+    float:right;
+  }
+  .health-pill{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    background:rgba(34,197,94,0.12);
+    color:var(--good);
+    font-size:11px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  canvas{
+    width:100%;
+    height:calc(100vh - 100px);
+    display:block;
+    border-radius:16px;
+  }
+  .note{
+    margin-top:10px;
+    font-size:11px;
+    color:var(--muted);
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- LEFT (Input Form) -->
+  <div class="card">
+    <h2 class="title">Yield Prediction Inputs</h2>
+
+    <!-- General -->
+    <div class="section-title">General</div>
+    <div class="input-group">
+      <label>Crop Type</label>
+      <select id="crop">
+        <option value="Strawberry">Strawberry</option>
+        <option value="Blueberry">Blueberry</option>
+        <option value="Tomato">Tomato</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Field Area (acres)</label>
+      <input type="number" id="area" value="2" min="0.1" step="0.1">
+    </div>
+    <div class="input-group">
+      <label>Planting Date</label>
+      <input type="date" id="plantDate">
+    </div>
+    <div class="input-group">
+      <label>Expected Harvest Date</label>
+      <input type="date" id="harvestDate">
+    </div>
+
+    <!-- Soil -->
+    <div class="section-title">Soil Parameters</div>
+    <div class="input-group">
+      <label>Soil pH</label>
+      <input type="number" id="soilPh" value="6.5" step="0.1">
+    </div>
+    <div class="input-group">
+      <label>Soil Moisture (% VWC)</label>
+      <input type="number" id="soilMoisture" value="30" step="1">
+    </div>
+
+    <!-- Nutrients -->
+    <div class="section-title">Nutrient Levels</div>
+    <div class="input-group">
+      <label>Nitrogen (ppm)</label>
+      <input type="number" id="nitrogen" value="150" step="5">
+    </div>
+    <div class="input-group">
+      <label>Phosphorus (ppm)</label>
+      <input type="number" id="phosphorus" value="80" step="5">
+    </div>
+    <div class="input-group">
+      <label>Potassium (ppm)</label>
+      <input type="number" id="potassium" value="250" step="5">
+    </div>
+
+    <!-- Water -->
+    <div class="section-title">Water Quality</div>
+    <div class="input-group">
+      <label>Water EC (mS/cm)</label>
+      <input type="number" id="waterEc" value="1.8" step="0.1">
+    </div>
+
+    <!-- Climate -->
+    <div class="section-title">Climate Parameters</div>
+    <div class="input-group">
+      <label>Temperature (°C)</label>
+      <input type="number" id="temperature" value="23" step="0.5">
+    </div>
+    <div class="input-group">
+      <label>Humidity (%)</label>
+      <input type="number" id="humidity" value="60" step="1">
+    </div>
+    <div class="input-group">
+      <label>Sunlight / PAR (μmol/m²/s)</label>
+      <input type="number" id="par" value="900" step="10">
+    </div>
+
+    <button class="btn" onclick="runPrediction()">Predict Yield</button>
+
+    <div class="note">
+      Note: All calculations are simulated using agronomic heuristics for demo purposes.
+    </div>
+  </div>
+
+  <!-- MIDDLE (Prediction Results) -->
+  <div class="card">
+    <h2 class="title">Prediction</h2>
+
+    <div id="resultBox">
+      <div class="health-pill" id="healthScore">Overall Field Health — —</div>
+
+      <div class="pred-main" id="yieldMain">—</div>
+      <div class="pred-sub" id="yieldSub">Adjust inputs on the left and click Predict.</div>
+
+      <div class="metric-row" id="yieldPerAcre">
+        <span class="key">Yield per Acre</span>
+        <span class="val">—</span>
+      </div>
+      <div class="metric-row" id="confInterval">
+        <span class="key">Confidence Interval</span>
+        <span class="val">—</span>
+      </div>
+      <div class="metric-row" id="factorsLine">
+        <span class="key">Key Drivers</span>
+        <span class="val">—</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT (Yield Trend Chart) -->
+  <div class="card">
+    <h2 class="title">Yield Trend (Simulated)</h2>
+    <canvas id="trendChart"></canvas>
+  </div>
+
+</div>
+
+<script>
+/* ============ UTILITIES ============ */
+function clamp(v, min, max){
+  return Math.max(min, Math.min(max, v));
+}
+function gaussianFactor(x, center, spread){
+  // exp( - ((x-center)/spread)^2 )
+  const z = (x - center)/spread;
+  return Math.exp(-z*z);
+}
+function formatNum(v){
+  return v.toLocaleString(undefined,{maximumFractionDigits:2});
+}
+
+/* ============ FAKE YIELD MODEL WITH AGRONOMIC LOGIC ============ */
+function fakeYieldModel(inputs){
+  const { area, crop, soilPh, soilMoisture, N, P, K, EC, temp, humidity, par } = inputs;
+
+  // base yield by crop (kg/acre)
+  const basePerAcre = {
+    "Strawberry": 700,
+    "Blueberry": 450,
+    "Tomato":    900
+  }[crop] || 550;
+
+  let base = basePerAcre * area;
+
+  // Soil pH: best around 6.0–7.0, center 6.5
+  const phFactor = gaussianFactor(clamp(soilPh,4,9), 6.5, 1.2);
+
+  // Soil moisture: best ~25–35%
+  const moistureFactor = gaussianFactor(clamp(soilMoisture,5,70), 30, 12);
+
+  // Nutrients: N most important, then K, then P
+  const N_factor = clamp(N/150, 0, 1.2); // 150 ppm ~ ideal
+  const P_factor = clamp(P/80, 0, 1.2);
+  const K_factor = clamp(K/200, 0, 1.2);
+  const fertFactor = clamp(0.5*N_factor + 0.2*P_factor + 0.3*K_factor, 0, 1.3);
+
+  // Water EC: ideal 1.0–2.5, center 1.8
+  const ecFactor = gaussianFactor(clamp(EC,0.1,6), 1.8, 1.2);
+
+  // Temperature: ideal ~18–28, center 23
+  const tempFactor = gaussianFactor(clamp(temp,-5,45), 23, 8);
+
+  // Humidity: ideal ~50–70, center 60
+  const humFactor = gaussianFactor(clamp(humidity,10,100), 60, 20);
+
+  // PAR: ideal around 800–1200, saturates after
+  const parNorm = clamp(par/1000, 0, 1.5); // 1000 ~ ideal
+  const parFactor = clamp(0.4 + 0.6*Math.min(parNorm,1.0), 0, 1.2);
+
+  // combine
+  let combined = phFactor * moistureFactor * fertFactor * ecFactor *
+                 tempFactor * humFactor * parFactor;
+
+  // smooth a bit so it doesn't drop to 0 too easily
+  combined = 0.3 + 0.7*combined;
+
+  // add mild noise
+  const noise = 0.9 + Math.random()*0.2;
+
+  const predicted = base * combined * noise;
+
+  // build growth trend (6 months) using growth curve
+  const growthCurve = [0.05, 0.12, 0.25, 0.45, 0.7, 1.0];
+  let trend = [];
+  let today = new Date();
+  for(let i=0;i<6;i++){
+    trend.push({
+      date: new Date(today.getFullYear(), today.getMonth()+i, 1),
+      value: predicted * growthCurve[i] * (0.95 + Math.random()*0.1)
+    });
+  }
+
+  // aggregate a health score (0–100)
+  const health = clamp(
+    (phFactor + moistureFactor + fertFactor + ecFactor +
+     tempFactor + humFactor + parFactor)/7 * 100,
+    0, 100
+  );
+
+  // textual drivers
+  const drivers = [];
+  if(phFactor < 0.7) drivers.push("pH");
+  if(moistureFactor < 0.7) drivers.push("Moisture");
+  if(fertFactor < 0.7) drivers.push("Nutrients");
+  if(ecFactor < 0.7) drivers.push("EC");
+  if(tempFactor < 0.7) drivers.push("Temp");
+  if(humFactor < 0.7) drivers.push("Humidity");
+  if(parFactor < 0.7) drivers.push("Light");
+  if(drivers.length === 0) drivers.push("Balanced conditions");
+
+  return {
+    predicted_kg: predicted,
+    predicted_ton: predicted/1000,
+    per_acre_kg: predicted/area,
+    per_acre_ton: (predicted/area)/1000,
+    conf_low: predicted*0.9,
+    conf_high: predicted*1.1,
+    trend,
+    health,
+    drivers
+  };
+}
+
+/* ============ UI UPDATE ============ */
+function runPrediction(){
+  const crop   = document.getElementById('crop').value;
+  const area   = parseFloat(document.getElementById('area').value) || 1;
+
+  const soilPh = parseFloat(document.getElementById('soilPh').value) || 6.5;
+  const soilMoisture = parseFloat(document.getElementById('soilMoisture').value) || 30;
+  const N = parseFloat(document.getElementById('nitrogen').value) || 150;
+  const P = parseFloat(document.getElementById('phosphorus').value) || 80;
+  const K = parseFloat(document.getElementById('potassium').value) || 250;
+  const EC = parseFloat(document.getElementById('waterEc').value) || 1.8;
+  const temp = parseFloat(document.getElementById('temperature').value) || 23;
+  const humidity = parseFloat(document.getElementById('humidity').value) || 60;
+  const par = parseFloat(document.getElementById('par').value) || 900;
+
+  const result = fakeYieldModel({
+    area, crop, soilPh, soilMoisture, N, P, K, EC, temp, humidity, par
+  });
+
+  // health pill
+  const healthEl = document.getElementById('healthScore');
+  const health = result.health;
+  let label = "Overall Field Health — ";
+  if(health > 80) label = "Overall Field Health — Excellent";
+  else if(health > 60) label = "Overall Field Health — Good";
+  else if(health > 40) label = "Overall Field Health — Fair";
+  else label = "Overall Field Health — At Risk";
+  healthEl.textContent = `${label} (${health.toFixed(0)} / 100)`;
+
+  document.getElementById('yieldMain').textContent =
+    `Predicted Yield: ${formatNum(result.predicted_kg)} kg (${formatNum(result.predicted_ton)} tons)`;
+
+  document.getElementById('yieldSub').textContent =
+    `Crop: ${crop} · Area: ${area} acres`;
+
+  const perAEl = document.querySelector('#yieldPerAcre .val');
+  perAEl.textContent =
+    `${formatNum(result.per_acre_kg)} kg (${formatNum(result.per_acre_ton)} tons)`;
+
+  const confEl = document.querySelector('#confInterval .val');
+  confEl.textContent =
+    `${formatNum(result.conf_low)} – ${formatNum(result.conf_high)} kg`;
+
+  const drvEl = document.querySelector('#factorsLine .val');
+  drvEl.textContent = Array.isArray(result.drivers) ?
+      result.drivers.join(", ") : result.drivers;
+
+  drawTrend(result.trend);
+}
+
+/* ============ TREND CHART (WITH AXES) ============ */
+const canvas = document.getElementById('trendChart');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawTrend(points){
+  resizeCanvas();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(!points || points.length === 0) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 50;
+
+  const values = points.map(p=>p.value);
+  let maxVal = Math.max(...values);
+  if(maxVal <= 0) maxVal = 1;
+
+  // axes
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 1;
+
+  // y-axis
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h - pad);
+  ctx.stroke();
+
+  // x-axis
+  ctx.beginPath();
+  ctx.moveTo(pad, h - pad);
+  ctx.lineTo(w - pad, h - pad);
+  ctx.stroke();
+
+  // y labels (0–max)
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.font = "12px system-ui, sans-serif";
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const val = maxVal * i/steps;
+    const y = h - pad - (val/maxVal)*(h-2*pad);
+    ctx.fillText(Math.round(val).toString(), 8, y+4);
+    ctx.beginPath();
+    ctx.moveTo(pad-4, y);
+    ctx.lineTo(pad, y);
+    ctx.stroke();
+  }
+
+  // x labels (month)
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const month = p.date.toLocaleString('en-US',{month:'short'});
+    ctx.fillText(month, x-12, h-pad+20);
+  });
+
+  // line
+  ctx.strokeStyle = "#6ee7ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const y = h - pad - (p.value/maxVal)*(h-2*pad);
+    if(i===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // points
+  ctx.fillStyle = "#a78bfa";
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const y = h - pad - (p.value/maxVal)*(h-2*pad);
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+</script>
+
+</body>
+</html>

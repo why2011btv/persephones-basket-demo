@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yield Prediction Demo</title>
+<style>
+  :root{
+    --bg:#0b0f1a; --panel:#121829; --accent:#6ee7ff; --accent2:#a78bfa;
+    --text:#e6edf7; --muted:#95a0b3; --good:#22c55e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#0b0f1a 0%, #0e1422 100%);
+    color:var(--text);
+    font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+  }
+  .wrap{
+    display:grid;
+    grid-template-columns:280px 1fr 360px;
+    gap:16px;
+    padding:16px;
+    min-height:100vh;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid #1f2a44;
+    border-radius:16px;
+    padding:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .title{
+    font-size:18px;
+    font-weight:700;
+    margin:0 0 10px 0;
+  }
+  .input-group{
+    margin-bottom:14px;
+  }
+  label{
+    display:block;
+    margin-bottom:6px;
+    font-size:14px;
+    color:var(--muted);
+  }
+  input, select{
+    width:100%;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #31406b;
+    background:#0a0f1b;
+    color:var(--text);
+  }
+  .btn{
+    cursor:pointer;
+    margin-top:10px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#031222;
+    font-weight:700;
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+  }
+  .btn:active{ transform:translateY(1px); }
+
+  .pred-main{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:6px;
+  }
+  .pred-sub{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .metric-row{
+    padding:8px 0;
+    border-bottom:1px dashed #233156;
+    font-size:14px;
+  }
+
+  canvas{
+    width:100%;
+    height:calc(100vh - 100px);
+    display:block;
+    border-radius:16px;
+  }
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- LEFT (Input Form) -->
+  <div class="card">
+    <h2 class="title">Yield Prediction Inputs</h2>
+
+    <div class="input-group">
+      <label>Crop Type</label>
+      <select id="crop">
+        <option value="Strawberry">Strawberry</option>
+        <option value="Blueberry">Blueberry</option>
+        <option value="Tomato">Tomato</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Field Area (acres)</label>
+      <input type="number" id="area" value="2">
+    </div>
+
+    <div class="input-group">
+      <label>Planting Date</label>
+      <input type="date" id="plantDate">
+    </div>
+
+    <div class="input-group">
+      <label>Expected Harvest Date</label>
+      <input type="date" id="harvestDate">
+    </div>
+
+    <button class="btn" onclick="runPrediction()">Predict Yield</button>
+
+  </div>
+
+  <!-- MIDDLE (Prediction Results) -->
+  <div class="card">
+    <h2 class="title">Prediction</h2>
+
+    <div id="resultBox">
+      <div class="pred-main" id="yieldMain">—</div>
+      <div class="pred-sub" id="yieldSub">—</div>
+
+      <div class="metric-row" id="yieldPerAcre">—</div>
+      <div class="metric-row" id="confInterval">—</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT (Yield Trend Chart) -->
+  <div class="card">
+    <h2 class="title">Yield Trend (Simulated)</h2>
+    <canvas id="trendChart"></canvas>
+  </div>
+
+</div>
+
+<script>
+/* ============ FAKE YIELD MODEL ============ */
+function fakeYieldModel(area, crop){
+  const base = {
+    "Strawberry": 600,
+    "Blueberry": 350,
+    "Tomato":    900
+  }[crop] || 500;
+
+  const noise = 0.8 + Math.random()*0.4;
+  const predicted = base * area * noise;
+
+// ===== Improved growth trend =====
+let trend = [];
+let today = new Date();
+
+// Crop-specific growth curves (rough)
+const growthCurve = [0.05, 0.12, 0.25, 0.45, 0.70, 1.0]; 
+// 前期几乎没有产量，后期逐步接近100%
+
+for (let i=0; i<6; i++){
+  trend.push({
+    date: new Date(today.getFullYear(), today.getMonth() + i, 1),
+    value: predicted * growthCurve[i] * (0.95 + Math.random()*0.1)
+  });
+}
+
+
+  return {
+    predicted_kg: predicted,
+    predicted_ton: predicted/1000,
+    per_acre_kg: predicted/area,
+    per_acre_ton: (predicted/area)/1000,
+    conf_low: predicted*0.9,
+    conf_high: predicted*1.1,
+    trend
+  };
+}
+
+/* ============ UI UPDATE ============ */
+function formatNum(v){
+  return v.toLocaleString(undefined,{maximumFractionDigits:2});
+}
+
+function runPrediction(){
+  const crop   = document.getElementById('crop').value;
+  const area   = parseFloat(document.getElementById('area').value);
+
+  const result = fakeYieldModel(area, crop);
+
+  document.getElementById('yieldMain').textContent =
+    `Predicted Yield: ${formatNum(result.predicted_kg)} kg (${formatNum(result.predicted_ton)} tons)`;
+
+  document.getElementById('yieldSub').textContent =
+    `Crop: ${crop} | Area: ${area} acres`;
+
+  document.getElementById('yieldPerAcre').textContent =
+    `Yield per Acre: ${formatNum(result.per_acre_kg)} kg (${formatNum(result.per_acre_ton)} tons)`;
+
+  document.getElementById('confInterval').textContent =
+    `Confidence Interval: ${formatNum(result.conf_low)} – ${formatNum(result.conf_high)} kg`;
+
+  drawTrend(result.trend);
+}
+
+/* ============ SIMPLE TREND CHART ============ */
+const canvas = document.getElementById('trendChart');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawTrend(points){
+  resizeCanvas();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!points || points.length === 0) return;
+
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 50;
+
+  // Extract values
+  const values = points.map(p => p.value);
+  const maxVal = Math.max(...values);
+  const minVal = 0;  // 生长从 0 开始
+
+  // === Draw axes ===
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 1;
+
+  // Y-axis
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, h - pad);
+  ctx.stroke();
+
+  // X-axis
+  ctx.beginPath();
+  ctx.moveTo(pad, h - pad);
+  ctx.lineTo(w - pad, h - pad);
+  ctx.stroke();
+
+  // === Draw axis labels ===
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.font = "12px sans-serif";
+
+  // Y-axis labels
+  for(let i = 0; i <= 5; i++){
+    const yVal = (maxVal / 5) * i;
+    const y = h - pad - (yVal / maxVal) * (h - 2*pad);
+    ctx.fillText(Math.round(yVal), pad - 35, y + 4);
+    ctx.beginPath();
+    ctx.moveTo(pad - 5, y);
+    ctx.lineTo(pad, y);
+    ctx.stroke();
+  }
+
+  // X-axis labels (months)
+  points.forEach((p, i) => {
+    const x = pad + (i/(points.length-1))*(w - 2*pad);
+    const month = p.date.toLocaleString('en-US', { month: 'short' });
+    ctx.fillText(month, x - 10, h - pad + 20);
+  });
+
+  // === Draw the line ===
+  ctx.strokeStyle = "#6ee7ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  points.forEach((p, i) => {
+    const x = pad + (i/(points.length-1))*(w - 2*pad);
+    const y = h - pad - (p.value / maxVal) * (h - 2*pad);
+    if(i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.stroke();
+
+  // === Draw points ===
+  ctx.fillStyle = "#a78bfa";
+  points.forEach((p, i) => {
+    const x = pad + (i/(points.length-1))*(w - 2*pad);
+    const y = h - pad - (p.value / maxVal) * (h - 2*pad);
+    ctx.beginPath();
+    ctx.arc(x, y, 4.5, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+</script>
+
+</body>
+</html>
