@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Plant Disease Demo — best_model_original.keras</title>
+<title>Persephone's Basket — Plant Disease & Yield Prediction</title>
 <style>
   :root{
     --bg:#0b0f1a; --panel:#121829; --accent:#6ee7ff; --accent2:#a78bfa;
@@ -12,11 +12,24 @@
   *{box-sizing:border-box}
   body{margin:0;background:linear-gradient(180deg,#0b0f1a 0%, #0e1422 100%);
        color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;}
-  .wrap{display:grid;grid-template-columns:280px 1fr 360px;gap:16px;padding:16px;min-height:100vh;}
+  
+  /* Tab Navigation */
+  .tabs{display:flex;gap:8px;padding:16px 16px 0;border-bottom:1px solid #1f2a44;}
+  .tab-btn{cursor:pointer;padding:12px 20px;background:transparent;border:none;color:var(--muted);
+           font-size:14px;font-weight:600;border-radius:8px 8px 0 0;transition:all 0.2s;
+           border-bottom:2px solid transparent;}
+  .tab-btn:hover{color:var(--text);background:rgba(110,231,255,0.05);}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(110,231,255,0.1);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  /* Disease Demo Styles */
+  .wrap-disease{display:grid;grid-template-columns:280px 1fr 360px;gap:16px;padding:16px;min-height:calc(100vh - 80px);}
+  .wrap-yield{display:grid;grid-template-columns:320px 1fr 360px;gap:16px;padding:16px;min-height:calc(100vh - 80px);}
   .card{background:var(--panel);border:1px solid #1f2a44;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
   .left,.middle,.right{padding:16px}
   .title{font-size:18px;font-weight:700;letter-spacing:.2px;margin:0 0 10px 0}
-  .samples{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 220px);overflow:auto;padding-right:6px}
+  .samples{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:calc(100vh - 300px);overflow:auto;padding-right:6px}
   .sample{cursor:pointer;border-radius:12px;border:1px solid #1e2744;overflow:hidden;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#0a0f1b;}
   .sample img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
   .sample:hover img{transform:scale(1.03)}
@@ -35,12 +48,33 @@
   .pred{font-size:22px;font-weight:800}
   .sub{color:var(--muted);font-size:12px}
   .footer{margin-top:12px;color:var(--muted);font-size:12px}
-  canvas{width:100%;height:calc(100vh - 48px);display:block;border-radius:16px}
+  canvas{width:100%;height:calc(100vh - 180px);display:block;border-radius:16px}
   .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(110,231,255,.1);color:var(--accent)}
+
+  /* Yield Demo Styles */
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 4px;}
+  .input-group{margin-bottom:10px;}
+  label{display:block;margin-bottom:4px;font-size:13px;color:var(--muted);}
+  input, select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #31406b;background:#0a0f1b;color:var(--text);font-size:13px;}
+  .pred-main{font-size:24px;font-weight:800;margin-bottom:6px;}
+  .pred-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+  .metric-row{padding:8px 0;border-bottom:1px dashed #233156;font-size:13px;}
+  .metric-row span.key{color:var(--muted);}
+  .metric-row span.val{float:right;}
+  .health-pill{display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(34,197,94,0.12);color:var(--good);font-size:11px;font-weight:600;margin-bottom:8px;}
+  .note{margin-top:10px;font-size:11px;color:var(--muted);}
 </style>
 </head>
 <body>
-<div class="wrap">
+<!-- Tab Navigation -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('disease')">Plant Disease Detection</button>
+  <button class="tab-btn" onclick="switchTab('yield')">Yield Prediction</button>
+</div>
+
+<!-- Disease Detection Tab -->
+<div id="tab-disease" class="tab-content active">
+<div class="wrap-disease">
   <!-- LEFT -->
   <div class="left card">
     <h2 class="title">Sample Images</h2>
@@ -192,277 +226,701 @@
     <canvas id="nn"></canvas>
   </div>
 </div>
+</div>
+
+<!-- Yield Prediction Tab -->
+<div id="tab-yield" class="tab-content">
+<div class="wrap-yield">
+  <!-- LEFT PANEL -->
+  <div class="card">
+    <h2 class="title">Yield Prediction Inputs</h2>
+
+    <div class="section-title">General</div>
+
+    <div class="input-group">
+      <label>Crop Type</label>
+      <select id="crop">
+        <option value="Apple">Apple</option>
+        <option value="Blueberry">Blueberry</option>
+        <option value="Cherry">Cherry</option>
+        <option value="Corn">Corn</option>
+        <option value="Grape">Grape</option>
+        <option value="Orange">Orange</option>
+        <option value="Peach">Peach</option>
+        <option value="Pepper">Pepper (Bell Pepper)</option>
+        <option value="Potato">Potato</option>
+        <option value="Raspberry">Raspberry</option>
+        <option value="Soybean">Soybean</option>
+        <option value="Squash">Squash</option>
+        <option value="Strawberry">Strawberry</option>
+        <option value="Tomato">Tomato</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Geographical Region</label>
+      <select id="region">
+        <option value="Northeast">Northeast</option>
+        <option value="Southeast">Southeast</option>
+        <option value="Midwest">Midwest</option>
+        <option value="Great Plains">Great Plains</option>
+        <option value="Northwest">Northwest</option>
+        <option value="Southwest">Southwest</option>
+        <option value="California">California</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Field Area (acres)</label>
+      <input type="number" id="area" value="2" min="0.1" step="0.1">
+    </div>
+
+    <div class="input-group">
+      <label>Planting Date</label>
+      <input type="date" id="plantDate">
+    </div>
+
+    <div class="input-group">
+      <label>Expected Harvest Date</label>
+      <input type="date" id="harvestDate">
+    </div>
+
+    <!-- Soil -->
+    <div class="section-title">Soil Parameters</div>
+
+    <div class="input-group">
+      <label>Soil pH</label>
+      <input type="number" id="soilPh" value="6.5" step="0.1">
+    </div>
+    <div class="input-group">
+      <label>Soil Moisture (% VWC)</label>
+      <input type="number" id="soilMoisture" value="30" step="1">
+    </div>
+
+    <!-- Nutrients -->
+    <div class="section-title">Nutrient Levels</div>
+
+    <div class="input-group">
+      <label>Nitrogen (ppm)</label>
+      <input type="number" id="nitrogen" value="150" step="5">
+    </div>
+    <div class="input-group">
+      <label>Phosphorus (ppm)</label>
+      <input type="number" id="phosphorus" value="80" step="5">
+    </div>
+    <div class="input-group">
+      <label>Potassium (ppm)</label>
+      <input type="number" id="potassium" value="250" step="5">
+    </div>
+
+    <!-- Water -->
+    <div class="section-title">Water Quality</div>
+
+    <div class="input-group">
+      <label>Water EC (mS/cm)</label>
+      <input type="number" id="waterEc" value="1.8" step="0.1">
+    </div>
+
+    <!-- Climate -->
+    <div class="section-title">Climate Parameters</div>
+
+    <div class="input-group">
+      <label>Temperature (°C)</label>
+      <input type="number" id="temperature" value="23" step="0.5">
+    </div>
+
+    <div class="input-group">
+      <label>Humidity (%)</label>
+      <input type="number" id="humidity" value="60" step="1">
+    </div>
+
+    <div class="input-group">
+      <label>Sunlight / PAR (μmol/m²/s)</label>
+      <input type="number" id="par" value="900" min="0" max="2000" step="10">
+    </div>
+
+    <button class="btn" onclick="runPrediction()">Predict Yield</button>
+
+    <div class="note">
+      All calculations are simulated using agronomic heuristics for demo purposes.
+    </div>
+  </div>
+
+  <!-- MIDDLE PANEL -->
+  <div class="card">
+    <h2 class="title">Prediction</h2>
+
+    <div id="resultBox">
+      <div class="health-pill" id="healthScore">Overall Field Health — —</div>
+
+      <div class="pred-main" id="yieldMain">—</div>
+      <div class="pred-sub" id="yieldSub">
+        Adjust inputs on the left and click Predict.
+      </div>
+
+      <div class="metric-row">
+        <span class="key">Yield per Acre</span>
+        <span class="val" id="yieldPerAcre">—</span>
+      </div>
+
+      <div class="metric-row">
+        <span class="key">Confidence Interval</span>
+        <span class="val" id="confInterval">—</span>
+      </div>
+
+      <div class="metric-row">
+        <span class="key">Key Drivers</span>
+        <span class="val" id="driversLine">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="card">
+    <h2 class="title">Yield Trend (Simulated)</h2>
+    <canvas id="trendChart"></canvas>
+  </div>
+
+</div>
+</div>
 
 <script>
-  // Detect base path for GitHub Pages
-  // For GitHub Pages: /persephones-basket-demo/ or /persephones-basket-demo/index.html
-  // For local: / or /index.html or file://
-  const pathParts = window.location.pathname.split('/').filter(p => p);
-  const isGitHubPages = pathParts.length > 0 && pathParts[0] !== 'index.html';
-  const basePath = isGitHubPages ? `/${pathParts[0]}` : '';
-  const getAssetPath = (path) => basePath ? `${basePath}/${path}` : path;
-
-  const preview = document.getElementById('preview');
-  const fileInput = document.getElementById('fileInput');
-  const predLabel = document.getElementById('predLabel');
-  const predProb  = document.getElementById('predProb');
-  const metricsDiv = document.getElementById('metrics');
-
-  // 类别名
-  const CLASS_NAMES = [
-    "Apple Apple scab",
-    "Apple Black rot",
-    "Apple Cedar apple rust",
-    "Apple healthy",
-    "Blueberry healthy",
-    "Cherry healthy",
-    "Cherry Powdery mildew",
-    "Corn Cercospora leaf spot Gray leaf spot",
-    "Corn Common rust",
-    "Corn healthy",
-    "Corn Northern Leaf Blight",
-    "Grape Black rot",
-    "Grape Esca (Black Measles)",
-    "Grape healthy",
-    "Grape Leaf blight (Isariopsis Leaf Spot)",
-    "Orange Haunglongbing (Citrus greening)",
-    "Peach Bacterial spot",
-    "Peach healthy",
-    "Pepper, bell Bacterial spot",
-    "Pepper, bell healthy",
-    "Potato Early blight",
-    "Potato healthy",
-    "Potato Late blight",
-    "Raspberry healthy",
-    "Soybean healthy",
-    "Squash Powdery mildew",
-    "Strawberry healthy",
-    "Strawberry Leaf scorch",
-    "Tomato Bacterial spot",
-    "Tomato Early blight",
-    "Tomato healthy",
-    "Tomato Late blight",
-    "Tomato Leaf Mold",
-    "Tomato Septoria leaf spot",
-    "Tomato Spider mites Two-spotted spider mite",
-    "Tomato Target Spot",
-    "Tomato Tomato mosaic virus",
-    "Tomato Tomato Yellow Leaf Curl Virus"
-  ];
-
-  // 每个 sample 对应的正确标签
-  const SAMPLE_LABELS = {
-    "https://static.wixstatic.com/media/392a62_38adc1608db64505972e9fb6887c44db~mv2.jpg": "Apple Apple scab",
-    "https://static.wixstatic.com/media/392a62_02437090e9ca45918b25d22536b6c3fc~mv2.jpg": "Apple Black rot",
-    "https://static.wixstatic.com/media/392a62_f5223a6023c34259b6d88583beed93b1~mv2.jpg": "Apple Cedar apple rust",
-    "https://static.wixstatic.com/media/392a62_e12ab51d00cf43d4a7d3e68b9b4d142c~mv2.jpg": "Apple healthy",
-    "https://static.wixstatic.com/media/392a62_e9148d7270b048a998210aaa3b7dd8c5~mv2.jpg": "Blueberry healthy",
-    "https://static.wixstatic.com/media/392a62_b45cb9a16fca4c348e364411f125fb92~mv2.jpg": "Cherry healthy",
-    "https://static.wixstatic.com/media/392a62_c6ad66e5f44349fe94a377175f9af75c~mv2.jpg": "Cherry Powdery mildew",
-    "https://static.wixstatic.com/media/392a62_8185186b27964ff7975b4d8cb046ab98~mv2.jpg": "Corn Cercospora leaf spot Gray leaf spot",
-    "https://static.wixstatic.com/media/392a62_1ad45a5e4b89498ab26cf1163d82aa15~mv2.jpg": "Corn Common rust",
-    "https://static.wixstatic.com/media/392a62_8f77af535c4249baa644cf47c2677d81~mv2.jpg": "Corn healthy",
-    "https://static.wixstatic.com/media/392a62_99a36817c2544042949eb6145a3c9a04~mv2.jpg": "Corn Northern Leaf Blight",
-    "https://static.wixstatic.com/media/392a62_e1b0cfefb0344152b38ef016ef5cba11~mv2.jpg": "Grape Black rot",
-    "https://static.wixstatic.com/media/392a62_8b75287de92f45df8dabaa5e187fba77~mv2.jpg": "Grape Esca (Black Measles)",
-    "https://static.wixstatic.com/media/392a62_eb38e452b6624122b77a5c0d09917885~mv2.jpg": "Grape healthy",
-    "https://static.wixstatic.com/media/392a62_e064e12f76df4bef85db41fee6d50475~mv2.jpg": "Grape Leaf blight (Isariopsis Leaf Spot)",
-    "https://static.wixstatic.com/media/392a62_a4461ce150954935a2d38ad7eac618a3~mv2.jpg": "Orange Haunglongbing (Citrus greening)",
-    "https://static.wixstatic.com/media/392a62_cf4f55e05a934b79866ed1c55b65bcdb~mv2.jpg": "Peach Bacterial spot",
-    "https://static.wixstatic.com/media/392a62_8f42122d47854dd5ae41d289e0385e26~mv2.jpg": "Peach healthy",
-    "https://static.wixstatic.com/media/392a62_9445fae4d330454486a36c2a57ce5a0c~mv2.jpg": "Pepper, bell Bacterial spot",
-    "https://static.wixstatic.com/media/392a62_86039e936128440fb683bd1077012cfe~mv2.jpg": "Pepper, bell healthy",
-    "https://static.wixstatic.com/media/392a62_e508fbe5e12e4a65aa84832f4b54f5d6~mv2.jpg": "Potato Early blight",
-    "https://static.wixstatic.com/media/392a62_673978ee7b904d66a2e4704968db6765~mv2.jpg": "Potato healthy",
-    "https://static.wixstatic.com/media/392a62_d8dc7ab6c88149b8a5cb1a28d4d6038a~mv2.jpg": "Potato Late blight",
-    "https://static.wixstatic.com/media/392a62_989ea7c886a74772956f157feb9ab5db~mv2.jpg": "Raspberry healthy",
-    "https://static.wixstatic.com/media/392a62_954c5e4fd05e48d48e14b2f99b959fde~mv2.jpg": "Soybean healthy",
-    "https://static.wixstatic.com/media/392a62_646e0bd18f094528b00c248b73e14641~mv2.jpg": "Squash Powdery mildew",
-    "https://static.wixstatic.com/media/392a62_d9f1c16f8b5442609758d0e2418f4e9a~mv2.jpg": "Strawberry healthy",
-    "https://static.wixstatic.com/media/392a62_ca2b6ef86f8241bb8092a1cbc0cf33d1~mv2.jpg": "Strawberry Leaf scorch",
-    "https://static.wixstatic.com/media/392a62_db4116cbb23645368d81f5e7605df381~mv2.jpg": "Tomato Bacterial spot",
-    "https://static.wixstatic.com/media/392a62_8f1c4ffc837043d580faa3f528919935~mv2.jpg": "Tomato Early blight",
-    "https://static.wixstatic.com/media/392a62_bdcf54fb17de4a5794fe411159a7e43a~mv2.jpg": "Tomato healthy",
-    "https://static.wixstatic.com/media/392a62_e773dcb7b7c044838c98a11560ef73d2~mv2.jpg": "Tomato Late blight",
-    "https://static.wixstatic.com/media/392a62_a9dac9e0c78f43e3aa8646cecee34e54~mv2.jpg": "Tomato Leaf Mold",
-    "https://static.wixstatic.com/media/392a62_dab104069f0041868895b7fa1c330d31~mv2.jpg": "Tomato Septoria leaf spot",
-    "https://static.wixstatic.com/media/392a62_d7860eb979544fa78eb4bfea8a8e2870~mv2.jpg": "Tomato Spider mites Two-spotted spider mite",
-    "https://static.wixstatic.com/media/392a62_eaa54518425449989023fc10229b0e6c~mv2.jpg": "Tomato Target Spot",
-    "https://static.wixstatic.com/media/392a62_78318ed48ffc41478d7a7931616139e1~mv2.jpg": "Tomato Tomato mosaic virus",
-    "https://static.wixstatic.com/media/392a62_43dc1b9b937342e5838439e8549db5f2~mv2.jpg": "Tomato Tomato Yellow Leaf Curl Virus"
-  };
-
-  // 哈希函数：字符串 -> 稳定整数
-  function hashString(str){
-    let h = 0;
-    for(let i=0;i<str.length;i++){
-      h = (h * 31 + str.charCodeAt(i)) >>> 0;
+// Tab Switching
+function switchTab(tabName){
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  
+  // Find the clicked button and activate it
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if(btn.textContent.includes(tabName === 'disease' ? 'Disease' : 'Yield')){
+      btn.classList.add('active');
     }
-    return h;
+  });
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  
+  // Resize canvases when switching tabs
+  setTimeout(() => {
+    if(tabName === 'disease' && window.resizeDiseaseCanvas) window.resizeDiseaseCanvas();
+    if(tabName === 'yield' && window.resizeYieldCanvas) window.resizeYieldCanvas();
+  }, 100);
+}
+
+// ========== DISEASE DETECTION DEMO ==========
+// Detect base path for GitHub Pages
+const pathParts = window.location.pathname.split('/').filter(p => p);
+const isGitHubPages = pathParts.length > 0 && pathParts[0] !== 'index.html';
+const basePath = isGitHubPages ? `/${pathParts[0]}` : '';
+const getAssetPath = (path) => basePath ? `${basePath}/${path}` : path;
+
+const preview = document.getElementById('preview');
+const fileInput = document.getElementById('fileInput');
+const predLabel = document.getElementById('predLabel');
+const predProb  = document.getElementById('predProb');
+const metricsDiv = document.getElementById('metrics');
+
+// 类别名
+const CLASS_NAMES = [
+  "Apple Apple scab",
+  "Apple Black rot",
+  "Apple Cedar apple rust",
+  "Apple healthy",
+  "Blueberry healthy",
+  "Cherry healthy",
+  "Cherry Powdery mildew",
+  "Corn Cercospora leaf spot Gray leaf spot",
+  "Corn Common rust",
+  "Corn healthy",
+  "Corn Northern Leaf Blight",
+  "Grape Black rot",
+  "Grape Esca (Black Measles)",
+  "Grape healthy",
+  "Grape Leaf blight (Isariopsis Leaf Spot)",
+  "Orange Haunglongbing (Citrus greening)",
+  "Peach Bacterial spot",
+  "Peach healthy",
+  "Pepper, bell Bacterial spot",
+  "Pepper, bell healthy",
+  "Potato Early blight",
+  "Potato healthy",
+  "Potato Late blight",
+  "Raspberry healthy",
+  "Soybean healthy",
+  "Squash Powdery mildew",
+  "Strawberry healthy",
+  "Strawberry Leaf scorch",
+  "Tomato Bacterial spot",
+  "Tomato Early blight",
+  "Tomato healthy",
+  "Tomato Late blight",
+  "Tomato Leaf Mold",
+  "Tomato Septoria leaf spot",
+  "Tomato Spider mites Two-spotted spider mite",
+  "Tomato Target Spot",
+  "Tomato Tomato mosaic virus",
+  "Tomato Tomato Yellow Leaf Curl Virus"
+];
+
+// 每个 sample 对应的正确标签
+const SAMPLE_LABELS = {
+  "https://static.wixstatic.com/media/392a62_38adc1608db64505972e9fb6887c44db~mv2.jpg": "Apple Apple scab",
+  "https://static.wixstatic.com/media/392a62_02437090e9ca45918b25d22536b6c3fc~mv2.jpg": "Apple Black rot",
+  "https://static.wixstatic.com/media/392a62_f5223a6023c34259b6d88583beed93b1~mv2.jpg": "Apple Cedar apple rust",
+  "https://static.wixstatic.com/media/392a62_e12ab51d00cf43d4a7d3e68b9b4d142c~mv2.jpg": "Apple healthy",
+  "https://static.wixstatic.com/media/392a62_e9148d7270b048a998210aaa3b7dd8c5~mv2.jpg": "Blueberry healthy",
+  "https://static.wixstatic.com/media/392a62_b45cb9a16fca4c348e364411f125fb92~mv2.jpg": "Cherry healthy",
+  "https://static.wixstatic.com/media/392a62_c6ad66e5f44349fe94a377175f9af75c~mv2.jpg": "Cherry Powdery mildew",
+  "https://static.wixstatic.com/media/392a62_8185186b27964ff7975b4d8cb046ab98~mv2.jpg": "Corn Cercospora leaf spot Gray leaf spot",
+  "https://static.wixstatic.com/media/392a62_1ad45a5e4b89498ab26cf1163d82aa15~mv2.jpg": "Corn Common rust",
+  "https://static.wixstatic.com/media/392a62_8f77af535c4249baa644cf47c2677d81~mv2.jpg": "Corn healthy",
+  "https://static.wixstatic.com/media/392a62_99a36817c2544042949eb6145a3c9a04~mv2.jpg": "Corn Northern Leaf Blight",
+  "https://static.wixstatic.com/media/392a62_e1b0cfefb0344152b38ef016ef5cba11~mv2.jpg": "Grape Black rot",
+  "https://static.wixstatic.com/media/392a62_8b75287de92f45df8dabaa5e187fba77~mv2.jpg": "Grape Esca (Black Measles)",
+  "https://static.wixstatic.com/media/392a62_eb38e452b6624122b77a5c0d09917885~mv2.jpg": "Grape healthy",
+  "https://static.wixstatic.com/media/392a62_e064e12f76df4bef85db41fee6d50475~mv2.jpg": "Grape Leaf blight (Isariopsis Leaf Spot)",
+  "https://static.wixstatic.com/media/392a62_a4461ce150954935a2d38ad7eac618a3~mv2.jpg": "Orange Haunglongbing (Citrus greening)",
+  "https://static.wixstatic.com/media/392a62_cf4f55e05a934b79866ed1c55b65bcdb~mv2.jpg": "Peach Bacterial spot",
+  "https://static.wixstatic.com/media/392a62_8f42122d47854dd5ae41d289e0385e26~mv2.jpg": "Peach healthy",
+  "https://static.wixstatic.com/media/392a62_9445fae4d330454486a36c2a57ce5a0c~mv2.jpg": "Pepper, bell Bacterial spot",
+  "https://static.wixstatic.com/media/392a62_86039e936128440fb683bd1077012cfe~mv2.jpg": "Pepper, bell healthy",
+  "https://static.wixstatic.com/media/392a62_e508fbe5e12e4a65aa84832f4b54f5d6~mv2.jpg": "Potato Early blight",
+  "https://static.wixstatic.com/media/392a62_673978ee7b904d66a2e4704968db6765~mv2.jpg": "Potato healthy",
+  "https://static.wixstatic.com/media/392a62_d8dc7ab6c88149b8a5cb1a28d4d6038a~mv2.jpg": "Potato Late blight",
+  "https://static.wixstatic.com/media/392a62_989ea7c886a74772956f157feb9ab5db~mv2.jpg": "Raspberry healthy",
+  "https://static.wixstatic.com/media/392a62_954c5e4fd05e48d48e14b2f99b959fde~mv2.jpg": "Soybean healthy",
+  "https://static.wixstatic.com/media/392a62_646e0bd18f094528b00c248b73e14641~mv2.jpg": "Squash Powdery mildew",
+  "https://static.wixstatic.com/media/392a62_d9f1c16f8b5442609758d0e2418f4e9a~mv2.jpg": "Strawberry healthy",
+  "https://static.wixstatic.com/media/392a62_ca2b6ef86f8241bb8092a1cbc0cf33d1~mv2.jpg": "Strawberry Leaf scorch",
+  "https://static.wixstatic.com/media/392a62_db4116cbb23645368d81f5e7605df381~mv2.jpg": "Tomato Bacterial spot",
+  "https://static.wixstatic.com/media/392a62_8f1c4ffc837043d580faa3f528919935~mv2.jpg": "Tomato Early blight",
+  "https://static.wixstatic.com/media/392a62_bdcf54fb17de4a5794fe411159a7e43a~mv2.jpg": "Tomato healthy",
+  "https://static.wixstatic.com/media/392a62_e773dcb7b7c044838c98a11560ef73d2~mv2.jpg": "Tomato Late blight",
+  "https://static.wixstatic.com/media/392a62_a9dac9e0c78f43e3aa8646cecee34e54~mv2.jpg": "Tomato Leaf Mold",
+  "https://static.wixstatic.com/media/392a62_dab104069f0041868895b7fa1c330d31~mv2.jpg": "Tomato Septoria leaf spot",
+  "https://static.wixstatic.com/media/392a62_d7860eb979544fa78eb4bfea8a8e2870~mv2.jpg": "Tomato Spider mites Two-spotted spider mite",
+  "https://static.wixstatic.com/media/392a62_eaa54518425449989023fc10229b0e6c~mv2.jpg": "Tomato Target Spot",
+  "https://static.wixstatic.com/media/392a62_78318ed48ffc41478d7a7931616139e1~mv2.jpg": "Tomato Tomato mosaic virus",
+  "https://static.wixstatic.com/media/392a62_43dc1b9b937342e5838439e8549db5f2~mv2.jpg": "Tomato Tomato Yellow Leaf Curl Virus"
+};
+
+// 哈希函数：字符串 -> 稳定整数
+function hashString(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){
+    h = (h * 31 + str.charCodeAt(i)) >>> 0;
   }
+  return h;
+}
 
-  // 基于种子生成固定随机数
-  function seededRandom(seed, min=0, max=1){
-    const x = Math.sin(seed) * 10000;
-    return min + (x - Math.floor(x)) * (max-min);
-  }
+// 基于种子生成固定随机数
+function seededRandom(seed, min=0, max=1){
+  const x = Math.sin(seed) * 10000;
+  return min + (x - Math.floor(x)) * (max-min);
+}
 
-  // 为 sample 生成固定分布
-  function makeSeededDistribution(url, correctLabel){
-    const seed = hashString(url);
-    const correctProb = seededRandom(seed, 0.7, 0.8); // 正确类在 70-80%
-    const remaining = 1 - correctProb;
+// 为 sample 生成固定分布
+function makeSeededDistribution(url, correctLabel){
+  const seed = hashString(url);
+  const correctProb = seededRandom(seed, 0.7, 0.8); // 正确类在 70-80%
+  const remaining = 1 - correctProb;
 
-    let probs = CLASS_NAMES.map(c => 0);
-    probs[CLASS_NAMES.indexOf(correctLabel)] = correctProb;
+  let probs = CLASS_NAMES.map(c => 0);
+  probs[CLASS_NAMES.indexOf(correctLabel)] = correctProb;
 
-    const others = CLASS_NAMES.filter(c => c !== correctLabel);
-    // 给其他类一点小扰动
-    let otherProbs = others.map((c,i)=> seededRandom(seed+i+1, 0.01, 0.1));
-    let sumOthers = otherProbs.reduce((a,b)=>a+b,0);
-    otherProbs = otherProbs.map(v => v/sumOthers * remaining);
+  const others = CLASS_NAMES.filter(c => c !== correctLabel);
+  // 给其他类一点小扰动
+  let otherProbs = others.map((c,i)=> seededRandom(seed+i+1, 0.01, 0.1));
+  let sumOthers = otherProbs.reduce((a,b)=>a+b,0);
+  otherProbs = otherProbs.map(v => v/sumOthers * remaining);
 
-    others.forEach((c,i)=>{
-      probs[CLASS_NAMES.indexOf(c)] = otherProbs[i];
-    });
-
-    return probs;
-  }
-
-  // 缓存 sample 分布
-  const SAMPLE_DISTS = {};
-  Object.entries(SAMPLE_LABELS).forEach(([url,label])=>{
-    SAMPLE_DISTS[url] = makeSeededDistribution(url,label);
+  others.forEach((c,i)=>{
+    probs[CLASS_NAMES.indexOf(c)] = otherProbs[i];
   });
 
-  // 点击 sample
-  async function useSample(url){
-    //const fullUrl = getAssetPath(url);
-    const fullUrl = url.startsWith('http') ? url : getAssetPath(url);
-    preview.src = fullUrl;
-    if(SAMPLE_DISTS[url]){
-      fakePredict(SAMPLE_DISTS[url]);
-    } else {
-      fakePredict();
-    }
-  }
+  return probs;
+}
 
-  // Update all sample image sources to use base path
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.sample img').forEach(img => {
-      const originalSrc = img.getAttribute('src');
-      if (originalSrc && !originalSrc.startsWith('http') && !originalSrc.startsWith('data:')) {
-        img.src = getAssetPath(originalSrc);
-      }
-    });
-  });
+// 缓存 sample 分布
+const SAMPLE_DISTS = {};
+Object.entries(SAMPLE_LABELS).forEach(([url,label])=>{
+  SAMPLE_DISTS[url] = makeSeededDistribution(url,label);
+});
 
-  // 上传文件 → 随机预测
-  fileInput.addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=> preview.src = reader.result;
-    reader.readAsDataURL(file);
+// 点击 sample
+async function useSample(url){
+  const fullUrl = url.startsWith('http') ? url : getAssetPath(url);
+  preview.src = fullUrl;
+  if(SAMPLE_DISTS[url]){
+    fakePredict(SAMPLE_DISTS[url]);
+  } else {
     fakePredict();
+  }
+}
+
+// Update all sample image sources to use base path
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.sample img').forEach(img => {
+    const originalSrc = img.getAttribute('src');
+    if (originalSrc && !originalSrc.startsWith('http') && !originalSrc.startsWith('data:')) {
+      img.src = getAssetPath(originalSrc);
+    }
+  });
+});
+
+// 上传文件 → 随机预测
+fileInput.addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=> preview.src = reader.result;
+  reader.readAsDataURL(file);
+  fakePredict();
+});
+
+// 假预测函数
+function fakePredict(forcedProbs){
+  let probs;
+  if(forcedProbs){
+    probs = forcedProbs;
+  } else {
+    probs = CLASS_NAMES.map(()=> Math.random());
+    const sum = probs.reduce((a,b)=>a+b,0);
+    probs = probs.map(p=>p/sum);
+  }
+
+  const bestIdx = probs.indexOf(Math.max(...probs));
+  const best = {label: CLASS_NAMES[bestIdx], prob: probs[bestIdx]};
+
+  predLabel.textContent = `Prediction: ${best.label}`;
+  predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
+
+  metricsDiv.innerHTML = '';
+  probs.forEach((p,i)=>{
+    const row = document.createElement('div');
+    row.className='metric';
+    row.innerHTML = `
+      <div>${CLASS_NAMES[i]}</div>
+      <div class="bar"><span style="width:${(p*100).toFixed(2)}%"></span></div>
+      <div style="margin-left:8px">${(p*100).toFixed(1)}%</div>
+    `;
+    metricsDiv.appendChild(row);
   });
 
-  // 假预测函数
-  function fakePredict(forcedProbs){
-    let probs;
-    if(forcedProbs){
-      probs = forcedProbs;
-    } else {
-      probs = CLASS_NAMES.map(()=> Math.random());
-      const sum = probs.reduce((a,b)=>a+b,0);
-      probs = probs.map(p=>p/sum);
+  pulsePath(bestIdx, CLASS_NAMES.length);
+}
+
+// 神经网络可视化部分
+const canvas = document.getElementById('nn');
+const ctx = canvas.getContext('2d');
+function resizeDiseaseCanvas(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
+window.resizeDiseaseCanvas = resizeDiseaseCanvas;
+window.addEventListener('resize', resizeDiseaseCanvas, {passive:true}); 
+resizeDiseaseCanvas();
+
+const LAYERS = [16, 24, 16, CLASS_NAMES.length];
+const nodes = [];
+function build(){
+  nodes.length = 0;
+  const w = canvas.width, h = canvas.height;
+  LAYERS.forEach((cnt, li)=>{
+    for(let i=0;i<cnt;i++){
+      const x = (li+1) / (LAYERS.length+1) * w;
+      const y = (i+1) / (cnt+1) * h;
+      nodes.push({x,y,layer:li,active:0});
     }
+  });
+}
+function draw(){
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
 
-    const bestIdx = probs.indexOf(Math.max(...probs));
-    const best = {label: CLASS_NAMES[bestIdx], prob: probs[bestIdx]};
+  for(const a of nodes){
+    for(const b of nodes){
+      if(b.layer === a.layer+1){
+        const alpha = 0.08 + 0.25*Math.max(a.active,b.active);
+        ctx.strokeStyle = `rgba(110,231,255,${alpha})`;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+    }
+  }
+  for(const n of nodes){
+    const r = 4 + 4*n.active;
+    const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2.2);
+    grad.addColorStop(0, `rgba(167,139,250,${0.6*n.active})`);
+    grad.addColorStop(1, `rgba(55,65,81,0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,Math.PI*2); ctx.fill();
 
-    predLabel.textContent = `Prediction: ${best.label}`;
-    predProb.textContent  = `Confidence: ${(best.prob*100).toFixed(2)}%`;
+    ctx.fillStyle = n.active>0.1 ? '#6ee7ff' : '#9aa7c2';
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
+    n.active *= 0.92;
+  }
+  requestAnimationFrame(draw);
+}
+build(); draw();
 
-    metricsDiv.innerHTML = '';
-    probs.forEach((p,i)=>{
-      const row = document.createElement('div');
-      row.className='metric';
-      row.innerHTML = `
-        <div>${CLASS_NAMES[i]}</div>
-        <div class="bar"><span style="width:${(p*100).toFixed(2)}%"></span></div>
-        <div style="margin-left:8px">${(p*100).toFixed(1)}%</div>
-      `;
-      metricsDiv.appendChild(row);
+function pulsePath(outIndex, outCount){
+  const lastLayerIdx = LAYERS.length-1;
+  let kth = 0, target = null;
+  for(const n of nodes){
+    if(n.layer===lastLayerIdx){
+      if(kth===outIndex){ target=n; break; }
+      kth++;
+    }
+  }
+  if(!target) return;
+  for(let L=lastLayerIdx; L>=0; L--){
+    const layerNodes = nodes.filter(n=>n.layer===L);
+    const sorted = [...layerNodes].sort((a,b)=> Math.abs(a.y-target.y) - Math.abs(b.y-target.y));
+    sorted.slice(0, Math.max(4, Math.floor(layerNodes.length*0.3))).forEach(n=> n.active = Math.min(1, n.active+0.9));
+  }
+}
+
+// ========== YIELD PREDICTION DEMO ==========
+/* UTILITIES */
+function clamp(v, min, max){
+  return Math.max(min, Math.min(max, v));
+}
+function gaussianFactor(x, center, spread){
+  const z = (x - center)/spread;
+  return Math.exp(-z*z);
+}
+function formatNum(v){
+  return v.toLocaleString(undefined,{maximumFractionDigits:2});
+}
+
+/* REAL USDA CROP YIELDS (kg/acre) */
+const BASE_YIELDS = {
+  "Apple": 25000,
+  "Blueberry": 4000,
+  "Cherry": 6000,
+  "Corn": 12000,
+  "Grape": 10000,
+  "Orange": 22000,
+  "Peach": 15000,
+  "Pepper": 15000,
+  "Potato": 30000,
+  "Raspberry": 5000,
+  "Soybean": 4000,
+  "Squash": 10000,
+  "Strawberry": 18000,
+  "Tomato": 60000
+};
+
+/* REGION MULTIPLIERS */
+const REGION_FACTORS = {
+  "Northeast": 0.95,
+  "Southeast": 1.05,
+  "Midwest": 1.15,
+  "Great Plains": 1.00,
+  "Northwest": 1.05,
+  "Southwest": 0.90,
+  "California": 1.20
+};
+
+/* THE MODEL */
+function fakeYieldModel(inputs){
+  const {
+    crop, region, area, soilPh, soilMoisture,
+    N, P, K, EC, temp, humidity, par
+  } = inputs;
+
+  let base = BASE_YIELDS[crop] * area;
+  const regionFactor = REGION_FACTORS[region] || 1.0;
+
+  const phFactor = gaussianFactor(clamp(soilPh,4,9), 6.5, 1.2);
+  const moistureFactor = gaussianFactor(clamp(soilMoisture,5,70), 30, 12);
+
+  const N_factor = clamp(N/150, 0, 1.2);
+  const P_factor = clamp(P/80, 0, 1.2);
+  const K_factor = clamp(K/200, 0, 1.2);
+  const fertFactor = clamp(0.5*N_factor + 0.2*P_factor + 0.3*K_factor, 0, 1.3);
+
+  const ecFactor = gaussianFactor(clamp(EC,0.1,6), 1.8, 1.2);
+  const tempFactor = gaussianFactor(clamp(temp,-5,45), 23, 8);
+  const humFactor = gaussianFactor(clamp(humidity,10,100), 60, 20);
+
+  const parNorm = clamp(par/1000, 0, 1.5);
+  const parFactor = clamp(0.4 + 0.6*Math.min(parNorm,1.0), 0, 1.2);
+
+  let combined = phFactor * moistureFactor * fertFactor * ecFactor *
+                 tempFactor * humFactor * parFactor;
+
+  combined = 0.3 + 0.7*combined;
+
+  const noise = 0.9 + Math.random()*0.2;
+
+  const predicted = base * combined * regionFactor * noise;
+
+  const growthCurve = [0.05, 0.12, 0.25, 0.45, 0.70, 1.00];
+  let trend = [];
+  let today = new Date();
+  for(let i=0;i<6;i++){
+    trend.push({
+      date: new Date(today.getFullYear(), today.getMonth()+i, 1),
+      value: predicted * growthCurve[i] * (0.95 + Math.random()*0.1)
     });
-
-    pulsePath(bestIdx, CLASS_NAMES.length);
   }
 
-  // 神经网络可视化部分
-  const canvas = document.getElementById('nn');
-  const ctx = canvas.getContext('2d');
-  function resize(){ canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
-  window.addEventListener('resize', resize, {passive:true}); resize();
+  const health = clamp(
+    (phFactor + moistureFactor + fertFactor + ecFactor +
+     tempFactor + humFactor + parFactor)/7 * 100,
+    0, 100
+  );
 
-  const LAYERS = [16, 24, 16, CLASS_NAMES.length];
-  const nodes = [];
-  function build(){
-    nodes.length = 0;
-    const w = canvas.width, h = canvas.height;
-    LAYERS.forEach((cnt, li)=>{
-      for(let i=0;i<cnt;i++){
-        const x = (li+1) / (LAYERS.length+1) * w;
-        const y = (i+1) / (cnt+1) * h;
-        nodes.push({x,y,layer:li,active:0});
-      }
-    });
+  const drivers = [];
+  if(phFactor < 0.7) drivers.push("pH");
+  if(moistureFactor < 0.7) drivers.push("Moisture");
+  if(fertFactor < 0.7) drivers.push("Nutrients");
+  if(ecFactor < 0.7) drivers.push("EC");
+  if(tempFactor < 0.7) drivers.push("Temp");
+  if(humFactor < 0.7) drivers.push("Humidity");
+  if(parFactor < 0.7) drivers.push("Light");
+  if(drivers.length === 0) drivers.push("Balanced");
+
+  return {
+    predicted_kg: predicted,
+    predicted_ton: predicted/1000,
+    per_acre_kg: predicted/area,
+    per_acre_ton: (predicted/area)/1000,
+    conf_low: predicted*0.9,
+    conf_high: predicted*1.1,
+    trend,
+    health,
+    drivers
+  };
+}
+
+/* UI UPDATE */
+function runPrediction(){
+  const crop = document.getElementById('crop').value;
+  const region = document.getElementById('region').value;
+  const area = parseFloat(document.getElementById('area').value) || 1;
+
+  const soilPh = parseFloat(document.getElementById('soilPh').value) || 6.5;
+  const soilMoisture = parseFloat(document.getElementById('soilMoisture').value) || 30;
+  const N = parseFloat(document.getElementById('nitrogen').value) || 150;
+  const P = parseFloat(document.getElementById('phosphorus').value) || 80;
+  const K = parseFloat(document.getElementById('potassium').value) || 250;
+  const EC = parseFloat(document.getElementById('waterEc').value) || 1.8;
+  const temp = parseFloat(document.getElementById('temperature').value) || 23;
+  const humidity = parseFloat(document.getElementById('humidity').value) || 60;
+  const par = parseFloat(document.getElementById('par').value) || 900;
+
+  const result = fakeYieldModel({
+    crop, region, area, soilPh, soilMoisture, N, P, K, EC, temp, humidity, par
+  });
+
+  const healthEl = document.getElementById('healthScore');
+  const health = result.health;
+  let label = "Overall Field Health — ";
+  if(health > 80) label += "Excellent";
+  else if(health > 60) label += "Good";
+  else if(health > 40) label += "Fair";
+  else label += "At Risk";
+  healthEl.textContent = `${label} (${health.toFixed(0)}/100)`;
+
+  document.getElementById('yieldMain').textContent =
+    `Predicted Yield: ${formatNum(result.predicted_kg)} kg (${formatNum(result.predicted_ton)} tons)`;
+
+  document.getElementById('yieldSub').textContent =
+    `Crop: ${crop} · Region: ${region} · Area: ${area} acres`;
+
+  document.getElementById('yieldPerAcre').textContent =
+    `${formatNum(result.per_acre_kg)} kg (${formatNum(result.per_acre_ton)} tons)`;
+
+  document.getElementById('confInterval').textContent =
+    `${formatNum(result.conf_low)} – ${formatNum(result.conf_high)} kg`;
+
+  document.getElementById('driversLine').textContent =
+    result.drivers.join(", ");
+
+  drawTrend(result.trend);
+}
+
+/* TREND CHART */
+const yieldCanvas = document.getElementById('trendChart');
+const yieldCtx = yieldCanvas.getContext('2d');
+
+function resizeYieldCanvas(){
+  yieldCanvas.width = yieldCanvas.clientWidth;
+  yieldCanvas.height = yieldCanvas.clientHeight;
+}
+window.resizeYieldCanvas = resizeYieldCanvas;
+resizeYieldCanvas();
+window.addEventListener('resize', resizeYieldCanvas);
+
+function drawTrend(points){
+  resizeYieldCanvas();
+  yieldCtx.clearRect(0,0,yieldCanvas.width,yieldCanvas.height);
+
+  if(!points || points.length === 0) return;
+
+  const w = yieldCanvas.width;
+  const h = yieldCanvas.height;
+  const pad = 50;
+
+  const values = points.map(p=>p.value);
+  let maxVal = Math.max(...values);
+  if(maxVal <= 0) maxVal = 1;
+
+  // axes
+  yieldCtx.strokeStyle = "rgba(255,255,255,0.15)";
+  yieldCtx.lineWidth = 1;
+
+  // Y-axis
+  yieldCtx.beginPath();
+  yieldCtx.moveTo(pad, pad);
+  yieldCtx.lineTo(pad, h - pad);
+  yieldCtx.stroke();
+
+  // X-axis
+  yieldCtx.beginPath();
+  yieldCtx.moveTo(pad, h - pad);
+  yieldCtx.lineTo(w - pad, h - pad);
+  yieldCtx.stroke();
+
+  // Y labels
+  yieldCtx.fillStyle = "rgba(255,255,255,0.35)";
+  yieldCtx.font = "12px system-ui, sans-serif";
+  for(let i=0;i<=4;i++){
+    const val = maxVal * i/4;
+    const y = h - pad - (val/maxVal)*(h-2*pad);
+    yieldCtx.fillText(Math.round(val), 8, y+4);
+    yieldCtx.beginPath();
+    yieldCtx.moveTo(pad-4, y);
+    yieldCtx.lineTo(pad, y);
+    yieldCtx.stroke();
   }
-  function draw(){
-    const w = canvas.width, h = canvas.height;
-    ctx.clearRect(0,0,w,h);
 
-    for(const a of nodes){
-      for(const b of nodes){
-        if(b.layer === a.layer+1){
-          const alpha = 0.08 + 0.25*Math.max(a.active,b.active);
-          ctx.strokeStyle = `rgba(110,231,255,${alpha})`;
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        }
-      }
-    }
-    for(const n of nodes){
-      const r = 4 + 4*n.active;
-      const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*2.2);
-      grad.addColorStop(0, `rgba(167,139,250,${0.6*n.active})`);
-      grad.addColorStop(1, `rgba(55,65,81,0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.2,0,Math.PI*2); ctx.fill();
+  // X labels
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const month = p.date.toLocaleString('en-US',{month:'short'});
+    yieldCtx.fillText(month, x-12, h-pad+20);
+  });
 
-      ctx.fillStyle = n.active>0.1 ? '#6ee7ff' : '#9aa7c2';
-      ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
-      n.active *= 0.92;
-    }
-    requestAnimationFrame(draw);
-  }
-  build(); draw();
+  // Line
+  yieldCtx.strokeStyle = "#6ee7ff";
+  yieldCtx.lineWidth = 2;
+  yieldCtx.beginPath();
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const y = h - pad - (p.value/maxVal)*(h-2*pad);
+    if(i===0) yieldCtx.moveTo(x,y);
+    else yieldCtx.lineTo(x,y);
+  });
+  yieldCtx.stroke();
 
-  function pulsePath(outIndex, outCount){
-    const lastLayerIdx = LAYERS.length-1;
-    let kth = 0, target = null;
-    for(const n of nodes){
-      if(n.layer===lastLayerIdx){
-        if(kth===outIndex){ target=n; break; }
-        kth++;
-      }
-    }
-    if(!target) return;
-    for(let L=lastLayerIdx; L>=0; L--){
-      const layerNodes = nodes.filter(n=>n.layer===L);
-      const sorted = [...layerNodes].sort((a,b)=> Math.abs(a.y-target.y) - Math.abs(b.y-target.y));
-      sorted.slice(0, Math.max(4, Math.floor(layerNodes.length*0.3))).forEach(n=> n.active = Math.min(1, n.active+0.9));
-    }
-  }
+  // Points
+  yieldCtx.fillStyle = "#a78bfa";
+  points.forEach((p,i)=>{
+    const x = pad + (i/(points.length-1))*(w-2*pad);
+    const y = h - pad - (p.value/maxVal)*(h-2*pad);
+    yieldCtx.beginPath();
+    yieldCtx.arc(x,y,4,0,Math.PI*2);
+    yieldCtx.fill();
+  });
+}
 </script>
 
 </body>
